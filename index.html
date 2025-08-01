@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Files</title>
+    <style>
+        /* General Styles */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
+            padding: 20px;
+            color: #333;
+            margin: 0;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .header {
+            text-align: left;
+            color: #007bff;
+            margin: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        
+        /* File Manager Container */
+        .file-manager-container {
+            flex-grow: 1;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            overflow: hidden;
+            position: relative;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .main-content {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        
+        .main-content-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .path-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .back-button {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #888;
+        }
+        .back-button:hover {
+            color: #333;
+        }
+        .current-path {
+            font-size: 18px;
+            font-weight: bold;
+            color: #555;
+        }
+        .layout-and-sort {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+        .layout-buttons button {
+            background: none;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .layout-buttons button.active {
+            background-color: #007bff;
+            color: #fff;
+            border-color: #007bff;
+        }
+        .sort-dropdown select {
+            background: #fff;
+            border: 1px solid #ddd;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            color: #333;
+        }
+        .path-nav {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            font-size: 16px;
+        }
+        .path-nav span {
+            cursor: pointer;
+            color: #007bff;
+            padding: 0 5px;
+        }
+        .path-nav span:not(:last-child)::after {
+            content: '>';
+            color: #333;
+            padding-left: 5px;
+        }
+
+        /* Items Layout */
+        #output-container.grid-view {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        #output-container.list-view {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .saved-item {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        .saved-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .saved-item.folder {
+            background-color: #e0f7fa;
+            border-color: #b2ebf2;
+        }
+        .saved-item.grid-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding: 15px;
+            height: 120px;
+        }
+        .saved-item.list-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px;
+            height: auto;
+        }
+        .item-icon {
+            font-size: 40px;
+            margin-bottom: 10px;
+        }
+        .list-item .item-main {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+        }
+        .list-item .item-icon {
+            font-size: 24px;
+            margin-bottom: 0;
+        }
+        .saved-item-title {
+            font-weight: 600;
+            font-size: 14px;
+            text-align: center;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            width: 100%;
+        }
+        .list-item .saved-item-title {
+            text-align: left;
+            flex-grow: 1;
+            font-size: 16px;
+        }
+        .item-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: flex;
+            gap: 2px;
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .saved-item:hover .item-actions {
+            opacity: 1;
+        }
+        .list-item .item-actions {
+            position: static;
+            opacity: 1;
+        }
+        .item-actions button {
+            background: rgba(255, 255, 255, 0.7);
+            border: none;
+            font-size: 12px;
+            cursor: pointer;
+            color: #888;
+            padding: 3px;
+            border-radius: 5px;
+            transition: color 0.2s ease;
+        }
+        .item-actions button:hover {
+            color: #333;
+        }
+        .dragging {
+            opacity: 0.5;
+            transform: scale(0.9);
+        }
+        
+        /* New Add Button & Drop-up Menu */
+        .add-button-container {
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            z-index: 10;
+        }
+        #add-button {
+            width: 60px;
+            height: 60px;
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+        #add-button:hover {
+            transform: scale(1.1);
+        }
+        .add-menu {
+            position: absolute;
+            bottom: 75px;
+            right: 0;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            padding: 10px;
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            width: 200px;
+        }
+        .add-menu.show {
+            display: flex;
+        }
+        .add-menu button, .add-menu label {
+            background: none;
+            border: none;
+            padding: 10px;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+        }
+        .add-menu button:hover, .add-menu label:hover {
+            background-color: #f0f2f5;
+        }
+        .add-menu #file-upload {
+            display: none;
+        }
+        .add-menu-input {
+            width: 100%;
+            padding: 8px 10px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            margin-bottom: 5px;
+            background: #fff;
+            color: #333;
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1001;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            overflow-y: auto;
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: auto;
+            padding: 25px;
+            border-radius: 12px;
+            position: relative;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            color: #333;
+            overflow-y: auto;
+            max-height: 90vh;
+        }
+        #full-screen-preview {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1002;
+            padding: 0;
+            margin: 0;
+            background-color: #fff;
+            overflow: hidden;
+        }
+        #full-screen-preview iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        #full-screen-preview .close-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 20px;
+            z-index: 1003;
+        }
+        .modal-content textarea {
+            width: 100%;
+            height: 300px;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-family: monospace;
+            font-size: 14px;
+            resize: vertical;
+            margin-bottom: 15px;
+            background: #fff;
+            color: #333;
+        }
+        #paste-modal-content textarea, #edit-code-textarea {
+            height: 200px;
+        }
+        .modal-close {
+            color: #aaa;
+            float: right;
+            font-size: 30px;
+            font-weight: bold;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            color: #333;
+        }
+        
+        /* Edit Item Modal specific styles */
+        .modal-content input[type="text"] {
+            width: 100%;
+            padding: 8px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            font-size: 16px;
+            margin-bottom: 15px;
+            background: #fff;
+            color: #333;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+        .modal-buttons button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="top-bar">
+        <h1 class="header">MP Salodiya</h1>
+    </div>
+    
+    <div class="file-manager-container">
+        <div class="main-content">
+            <div class="main-content-header">
+                <div class="path-controls">
+                    <button class="back-button" onclick="goBack()">&larr;</button>
+                    <div id="path-nav" class="path-nav"></div>
+                </div>
+                <div class="layout-and-sort">
+                    <div class="sort-dropdown">
+                        <select id="sort-by" onchange="loadSavedItems()">
+                            <option value="name-asc">Name (A-Z)</option>
+                            <option value="name-desc">Name (Z-A)</option>
+                            <option value="date-new">Date (Newest)</option>
+                            <option value="date-old">Date (Oldest)</option>
+                        </select>
+                    </div>
+                    <div class="layout-buttons">
+                        <button id="grid-view-button" onclick="setView('grid')">Grid View</button>
+                        <button id="list-view-button" onclick="setView('list')">List View</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="output-container" class="list-view">
+                </div>
+        </div>
+        
+        <div class="add-button-container">
+            <div id="add-menu" class="add-menu">
+                <button onclick="openCreateFolderModal()">
+                    &#x1F4C2; फ़ोल्डर बनाएँ
+                </button>
+                <button onclick="openPasteModal()">
+                    &#x1F4CB; कोड पेस्ट करें
+                </button>
+                <label for="file-upload-add">
+                    &#x1F4C1; फाइल अपलोड करें
+                </label>
+                <input type="file" id="file-upload-add" accept=".html" onchange="handleFileUpload(event)">
+            </div>
+            <button id="add-button" onclick="toggleAddMenu()">+</button>
+        </div>
+    </div>
+
+    <div id="paste-modal" class="modal">
+        <div id="paste-modal-content" class="modal-content">
+            <span class="modal-close" onclick="closePasteModal()">&times;</span>
+            <h3>यहाँ अपना HTML कोड पेस्ट करें</h3>
+            <textarea id="html-input-modal" placeholder="अपना HTML कोड पेस्ट करें..."></textarea>
+            <div class="modal-buttons">
+                <button onclick="saveCodeFromModal()">
+                    <span class="button-icon">&#x1F4BE;</span> सेव करें
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="create-folder-modal" class="modal">
+        <div id="create-folder-modal-content" class="modal-content">
+            <span class="modal-close" onclick="closeCreateFolderModal()">&times;</span>
+            <h3>नया फ़ोल्डर बनाएँ</h3>
+            <input type="text" id="create-folder-name-input" placeholder="फ़ोल्डर का नाम लिखें...">
+            <div class="modal-buttons">
+                <button onclick="createFolderFromModal()">
+                    <span class="button-icon">&#x1F4C2;</span> बनाएँ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="full-screen-preview">
+        <button class="close-button" onclick="closeFullScreenPreview()">&times;</button>
+        <iframe id="code-iframe" title="Code Preview"></iframe>
+    </div>
+
+    <div id="edit-item-modal" class="modal">
+        <div id="edit-item-modal-content" class="modal-content">
+            <span class="modal-close" onclick="closeEditItemModal()">&times;</span>
+            <h3>आइटम एडिट करें</h3>
+            <div id="edit-name-container">
+                <p>नाम बदलें:</p>
+                <input type="text" id="edit-item-name-input">
+            </div>
+            <div id="edit-code-container">
+                <p>कोड एडिट करें:</p>
+                <textarea id="edit-code-textarea"></textarea>
+            </div>
+            <div class="button-group">
+                <button onclick="saveEditedItem()">
+                    <span class="button-icon">&#x1F4BE;</span> सेव करें
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentFolder = '';
+        let currentView = localStorage.getItem('currentView') || 'list';
+        let currentSort = localStorage.getItem('currentSort') || 'date-new';
+        let activeItemForEdit = null;
+        let dragSrcEl = null;
+        let longPressTimer = null;
+        const longPressDuration = 500;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            currentFolder = '';
+            loadSavedItems();
+            setupReorder();
+            setupHistory();
+            setView(currentView);
+            
+            // Load theme from local storage
+            const savedTheme = localStorage.getItem('currentTheme') || 'light';
+            document.body.className = savedTheme;
+            
+            document.getElementById('sort-by').value = localStorage.getItem('currentSort') || 'date-new';
+
+            document.body.addEventListener('click', closeModalsOnClickOutside);
+        });
+        
+        function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const htmlCode = e.target.result;
+                    const boxName = file.name.replace('.html', '').replace('.htm', '');
+                    saveCode(htmlCode, boxName);
+                };
+                reader.readAsText(file);
+            }
+        }
+        
+        function toggleAddMenu() {
+            const addMenu = document.getElementById('add-menu');
+            addMenu.classList.toggle('show');
+        }
+        
+        function saveCodeFromModal() {
+            const htmlCode = document.getElementById('html-input-modal').value;
+            saveCode(htmlCode);
+            closePasteModal();
+        }
+
+        function loadSavedItems() {
+            const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+            const itemsInFolder = allItems[currentFolder] || [];
+            
+            const sortBy = document.getElementById('sort-by').value;
+            localStorage.setItem('currentSort', sortBy);
+
+            const sortedItems = sortItems(sortBy, itemsInFolder);
+
+            const outputContainer = document.getElementById('output-container');
+            outputContainer.innerHTML = '';
+            
+            renderPathNav();
+
+            sortedItems.forEach(item => createItemElement(item));
+            
+            setView(currentView);
+        }
+
+        function renderPathNav() {
+            const pathNavContainer = document.getElementById('path-nav');
+            pathNavContainer.innerHTML = '';
+            
+            const pathSegments = currentFolder === '' ? [] : currentFolder.split('/');
+            
+            const myFilesSpan = document.createElement('span');
+            myFilesSpan.innerText = 'My Files';
+            myFilesSpan.onclick = () => enterFolder('');
+            pathNavContainer.appendChild(myFilesSpan);
+            
+            let currentPath = '';
+            pathSegments.forEach(segment => {
+                currentPath += (currentPath === '' ? '' : '/') + segment;
+                const pathSpan = document.createElement('span');
+                pathSpan.innerText = segment;
+                pathSpan.onclick = () => enterFolder(currentPath);
+                pathNavContainer.appendChild(pathSpan);
+            });
+        }
+
+        function saveToLocalStorage(newItems) {
+            const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+            allItems[currentFolder] = newItems;
+            localStorage.setItem('savedItems', JSON.stringify(allItems));
+        }
+
+        function createItemElement(itemData) {
+            const outputContainer = document.getElementById('output-container');
+            const newItem = document.createElement('div');
+            newItem.className = `saved-item ${currentView === 'grid' ? 'grid-item' : 'list-item'} ${itemData.type}`;
+            newItem.dataset.type = itemData.type;
+            newItem.dataset.name = itemData.name;
+            if (itemData.type === 'code') {
+                newItem.dataset.html = itemData.html;
+            }
+            newItem.draggable = true;
+            
+            newItem.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!e.target.closest('.item-actions')) {
+                    if (itemData.type === 'folder') {
+                        enterFolder(itemData.name);
+                    } else {
+                        openFullScreenPreview(itemData.html);
+                    }
+                }
+            });
+            
+            newItem.addEventListener('touchstart', (e) => {
+                e.stopPropagation();
+                longPressTimer = setTimeout(() => {
+                    newItem.draggable = true;
+                    newItem.classList.add('dragging');
+                    e.target.dataset.dragged = 'true';
+                }, longPressDuration);
+            });
+            newItem.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            });
+            newItem.addEventListener('touchmove', () => {
+                clearTimeout(longPressTimer);
+                longPressTimer = null;
+            });
+
+            const itemMain = document.createElement('div');
+            itemMain.className = 'item-main';
+
+            const itemIcon = document.createElement('span');
+            itemIcon.className = 'item-icon';
+            itemIcon.innerHTML = itemData.type === 'folder' ? '&#x1F4C2;' : '&#x1F4C4;';
+
+            const itemTitle = document.createElement('div');
+            itemTitle.className = 'saved-item-title';
+            itemTitle.innerText = itemData.name;
+            
+            itemMain.appendChild(itemIcon);
+            itemMain.appendChild(itemTitle);
+            
+            const itemActions = document.createElement('div');
+            itemActions.className = 'item-actions';
+
+            const editBtn = document.createElement('button');
+            editBtn.innerHTML = '&#9998;';
+            editBtn.title = itemData.type === 'code' ? 'एडिट करें' : 'नाम बदलें';
+            editBtn.onclick = (e) => {
+                e.stopPropagation();
+                openEditItemModal(itemData, newItem);
+            };
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.innerHTML = '&#10006;';
+            deleteBtn.title = 'हटाएँ';
+            deleteBtn.onclick = (e) => {
+                e.stopPropagation();
+                deleteItem(newItem);
+            };
+            
+            itemActions.appendChild(editBtn);
+            itemActions.appendChild(deleteBtn);
+            
+            newItem.appendChild(itemMain);
+            newItem.appendChild(itemActions);
+            outputContainer.appendChild(newItem);
+        }
+        
+        function enterFolder(folderName) {
+            currentFolder = folderName;
+            loadSavedItems();
+            updateHistory();
+        }
+
+        function goBack() {
+            if (currentFolder !== '') {
+                const pathSegments = currentFolder.split('/');
+                pathSegments.pop();
+                currentFolder = pathSegments.join('/');
+                loadSavedItems();
+                updateHistory();
+            }
+        }
+
+        function createFolderFromModal() {
+            const folderNameInput = document.getElementById('create-folder-name-input');
+            const folderName = folderNameInput.value.trim();
+            if (folderName === '') {
+                alert('कृपया फ़ोल्डर के लिए एक नाम लिखें।');
+                return;
+            }
+
+            const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+            const currentItems = allItems[currentFolder] || [];
+            
+            if (currentItems.some(item => item.name === folderName && item.type === 'folder')) {
+                alert('इस नाम का फ़ोल्डर पहले से मौजूद है।');
+                return;
+            }
+
+            const newFolder = { name: folderName, type: 'folder', date: new Date().toISOString() };
+            currentItems.push(newFolder);
+            saveToLocalStorage(currentItems);
+            
+            const newFolderPath = currentFolder === '' ? folderName : `${currentFolder}/${folderName}`;
+            allItems[newFolderPath] = [];
+            localStorage.setItem('savedItems', JSON.stringify(allItems));
+            
+            folderNameInput.value = '';
+            closeCreateFolderModal();
+            toggleAddMenu();
+            loadSavedItems();
+        }
+
+        function deleteItem(itemElement) {
+            if (confirm('क्या आप इस आइटम को हटाना चाहते हैं?')) {
+                const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+                const currentItems = allItems[currentFolder] || [];
+                const oldName = itemElement.dataset.name;
+                const itemType = itemElement.dataset.type;
+                
+                const updatedItems = currentItems.filter(item => !(item.name === oldName && item.type === itemType));
+                
+                if (itemType === 'folder') {
+                    const folderPath = currentFolder === '' ? oldName : `${currentFolder}/${oldName}`;
+                    delete allItems[folderPath];
+                }
+                
+                allItems[currentFolder] = updatedItems;
+                localStorage.setItem('savedItems', JSON.stringify(allItems));
+                itemElement.remove();
+            }
+        }
+
+        function saveCode(htmlCode, boxName = null) {
+            if (!htmlCode || htmlCode.trim() === '') {
+                alert('कृपया HTML कोड पेस्ट करें।');
+                return;
+            }
+            
+            if (!boxName || boxName.trim() === '') {
+                const titleMatch = htmlCode.match(/<title>(.*?)<\/title>/i);
+                if (titleMatch && titleMatch[1]) {
+                    boxName = titleMatch[1].trim();
+                } else {
+                    boxName = 'HTML Snippet';
+                }
+                if (boxName.length > 30) {
+                    boxName = boxName.substring(0, 30) + '...';
+                }
+            }
+            
+            const boxData = { name: boxName, html: htmlCode, type: 'code', date: new Date().toISOString() };
+            
+            const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+            const currentItems = allItems[currentFolder] || [];
+            currentItems.push(boxData);
+            allItems[currentFolder] = currentItems;
+            localStorage.setItem('savedItems', JSON.stringify(allItems));
+            
+            updateHistory();
+            loadSavedItems();
+        }
+
+        function saveEditedItem() {
+            const newName = document.getElementById('edit-item-name-input').value.trim();
+            if (newName === '') {
+                alert('नाम खाली नहीं हो सकता।');
+                return;
+            }
+            
+            const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+            const currentItems = allItems[currentFolder];
+            const itemIndex = currentItems.findIndex(item => item.name === activeItemForEdit.name);
+            
+            if (itemIndex > -1) {
+                currentItems[itemIndex].name = newName;
+                if (activeItemForEdit.type === 'code') {
+                    const newCode = document.getElementById('edit-code-textarea').value;
+                    if (newCode.trim() === '') {
+                        alert('कोड खाली नहीं हो सकता।');
+                        return;
+                    }
+                    currentItems[itemIndex].html = newCode;
+                }
+                
+                if (activeItemForEdit.type === 'folder' && newName !== activeItemForEdit.name) {
+                    const oldPath = currentFolder === '' ? activeItemForEdit.name : `${currentFolder}/${activeItemForEdit.name}`;
+                    const newPath = currentFolder === '' ? newName : `${currentFolder}/${newName}`;
+                    
+                    if (allItems[oldPath]) {
+                        allItems[newPath] = allItems[oldPath];
+                        delete allItems[oldPath];
+                    }
+                }
+                
+                localStorage.setItem('savedItems', JSON.stringify(allItems));
+            }
+            closeEditItemModal();
+            loadSavedItems();
+        }
+        
+        function openPasteModal() {
+            closeAllModals();
+            document.getElementById('paste-modal').style.display = 'flex';
+        }
+        function closePasteModal() {
+            document.getElementById('paste-modal').style.display = 'none';
+            document.getElementById('html-input-modal').value = '';
+        }
+        
+        function openCreateFolderModal() {
+            closeAllModals();
+            document.getElementById('create-folder-modal').style.display = 'flex';
+            document.getElementById('create-folder-name-input').focus();
+        }
+        function closeCreateFolderModal() {
+            document.getElementById('create-folder-modal').style.display = 'none';
+        }
+
+        function openFullScreenPreview(code) {
+            const previewModal = document.getElementById('full-screen-preview');
+            const iframe = document.getElementById('code-iframe');
+            
+            iframe.srcdoc = code;
+            
+            previewModal.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+        }
+        
+        function closeFullScreenPreview() {
+            document.getElementById('full-screen-preview').style.display = 'none';
+            document.getElementById('code-iframe').srcdoc = '';
+            document.body.style.overflow = '';
+        }
+        
+        function openEditItemModal(itemData, itemElement) {
+            closeAllModals();
+            activeItemForEdit = itemData;
+            
+            document.getElementById('edit-item-name-input').value = itemData.name;
+            const editCodeContainer = document.getElementById('edit-code-container');
+            
+            if (itemData.type === 'code') {
+                editCodeContainer.style.display = 'block';
+                document.getElementById('edit-code-textarea').value = itemData.html;
+            } else {
+                editCodeContainer.style.display = 'none';
+            }
+            
+            document.getElementById('edit-item-modal').style.display = 'flex';
+        }
+        function closeEditItemModal() {
+            document.getElementById('edit-item-modal').style.display = 'none';
+        }
+        
+        function setView(view) {
+            const outputContainer = document.getElementById('output-container');
+            const gridButton = document.getElementById('grid-view-button');
+            const listButton = document.getElementById('list-view-button');
+            
+            currentView = view;
+            localStorage.setItem('currentView', view);
+            
+            if (view === 'grid') {
+                outputContainer.classList.remove('list-view');
+                outputContainer.classList.add('grid-view');
+                gridButton.classList.add('active');
+                listButton.classList.remove('active');
+            } else {
+                outputContainer.classList.remove('grid-view');
+                outputContainer.classList.add('list-view');
+                gridButton.classList.remove('active');
+                listButton.classList.add('active');
+            }
+        }
+        
+        function sortItems(sortBy, items) {
+            const folders = items.filter(item => item.type === 'folder');
+            const files = items.filter(item => item.type === 'code');
+            
+            const sortFunction = (a, b) => {
+                if (sortBy === 'name-asc') return a.name.localeCompare(b.name);
+                if (sortBy === 'name-desc') return b.name.localeCompare(a.name);
+                if (sortBy === 'date-new') return new Date(b.date) - new Date(a.date);
+                if (sortBy === 'date-old') return new Date(a.date) - new Date(b.date);
+                return 0;
+            };
+
+            const sortedFolders = [...folders].sort(sortFunction);
+            const sortedFiles = [...files].sort(sortFunction);
+
+            return [...sortedFolders, ...sortedFiles];
+        }
+        
+        function closeAllModals() {
+            document.getElementById('paste-modal').style.display = 'none';
+            document.getElementById('create-folder-modal').style.display = 'none';
+            document.getElementById('full-screen-preview').style.display = 'none';
+            document.getElementById('edit-item-modal').style.display = 'none';
+        }
+
+        function closeModalsOnClickOutside(event) {
+            const modals = document.querySelectorAll('.modal');
+            modals.forEach(modal => {
+                if (modal.style.display === 'flex') {
+                    const modalContent = modal.querySelector('.modal-content');
+                    if (modalContent && !modalContent.contains(event.target)) {
+                        closeAllModals();
+                    }
+                }
+            });
+        }
+        
+        function updateHistory() {
+            const folderPath = currentFolder === '' ? '' : currentFolder.split('/').map(f => encodeURIComponent(f)).join('/');
+            history.pushState({ folder: currentFolder }, '', `#${folderPath}`);
+        }
+        
+        window.onpopstate = (event) => {
+            if (event.state && event.state.folder !== undefined) {
+                currentFolder = event.state.folder;
+                loadSavedItems();
+            } else {
+                currentFolder = '';
+                loadSavedItems();
+            }
+        };
+
+        function setupReorder() {
+            const outputContainer = document.getElementById('output-container');
+            let draggedItem = null;
+
+            outputContainer.addEventListener('dragstart', (e) => {
+                if (e.target.classList.contains('saved-item')) {
+                    draggedItem = e.target;
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.target.classList.add('dragging');
+                }
+            });
+
+            outputContainer.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                const target = e.target.closest('.saved-item');
+                if (target && draggedItem !== target) {
+                    const rect = target.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    if (e.clientY < midpoint) {
+                        outputContainer.insertBefore(draggedItem, target);
+                    } else {
+                        outputContainer.insertBefore(draggedItem, target.nextSibling);
+                    }
+                }
+            });
+
+            outputContainer.addEventListener('drop', (e) => {
+                e.preventDefault();
+                if(draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    saveReorderedItems();
+                }
+            });
+
+            outputContainer.addEventListener('dragend', (e) => {
+                e.target.classList.remove('dragging');
+                draggedItem = null;
+            });
+            
+            outputContainer.addEventListener('touchstart', (e) => {
+                const target = e.target.closest('.saved-item');
+                if (target) {
+                    longPressTimer = setTimeout(() => {
+                        draggedItem = target;
+                        draggedItem.classList.add('dragging');
+                        e.preventDefault();
+                    }, longPressDuration);
+                }
+            });
+
+            outputContainer.addEventListener('touchend', () => {
+                clearTimeout(longPressTimer);
+                if (draggedItem) {
+                    draggedItem.classList.remove('dragging');
+                    draggedItem = null;
+                    saveReorderedItems();
+                }
+            });
+
+            outputContainer.addEventListener('touchmove', (e) => {
+                if (!draggedItem) return;
+                clearTimeout(longPressTimer);
+
+                const touch = e.touches[0];
+                const target = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('.saved-item');
+                if (target && draggedItem !== target) {
+                    const rect = target.getBoundingClientRect();
+                    const midpoint = rect.top + rect.height / 2;
+                    if (touch.clientY < midpoint) {
+                        outputContainer.insertBefore(draggedItem, target);
+                    } else {
+                        outputContainer.insertBefore(draggedItem, target.nextSibling);
+                    }
+                }
+            });
+        }
+        
+        function saveReorderedItems() {
+            const allItems = JSON.parse(localStorage.getItem('savedItems')) || {};
+            const currentItems = Array.from(document.getElementById('output-container').children).map(itemEl => {
+                return {
+                    name: itemEl.dataset.name,
+                    type: itemEl.dataset.type,
+                    html: itemEl.dataset.html || '',
+                    date: new Date().toISOString()
+                };
+            });
+            allItems[currentFolder] = currentItems;
+            localStorage.setItem('savedItems', JSON.stringify(allItems));
+        }
+    </script>
+</body>
+</html>
